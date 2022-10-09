@@ -1,0 +1,84 @@
+#include <ESP8266WiFi.h>
+#include <FirebaseESP8266.h>
+#include "ESP8266TrueRandom.h"
+
+const char *ssid =  "HaniHome-2.4GHz";      //WiFi SSID to which you want NodeMCU to connect
+const char *pass =  "hani@2016";     //Password of your wifi network 
+byte uuidNumber[8]; // UUIDs in binary form are 8 bytes long
+
+WiFiClient client;
+FirebaseJson json;
+FirebaseJson json2;
+                          
+#define FIREBASE_HOST "homeautomation-6d999-default-rtdb.firebaseio.com"                     //Your Firebase Project URL goes here without "http:" , "\" and "/"
+#define FIREBASE_AUTH "1rknUEZTjXVlUz6avz3mx9nnHlC9zxYu1PHjBiPy" //Your Firebase Database Secret goes here
+             
+//push button must be linked to pin D2                    
+const int buttonPin=D2;
+FirebaseData firebaseData;
+int val=0; 
+
+void setup() {
+
+       Serial.begin(115200);
+       delay(10);
+               
+       Serial.println("Connecting to ");
+       Serial.println(ssid); 
+ 
+       WiFi.begin(ssid, pass); 
+       while (WiFi.status() != WL_CONNECTED) 
+          {
+            delay(500);
+            Serial.print(".");
+          }
+      Serial.println("");
+      Serial.println("WiFi connected to: ");
+      Serial.println(ssid); 
+      Serial.print("IP Address is : ");
+      Serial.println(WiFi.localIP());
+  
+                                   // Select the same baud rate if you want to see the datas on Serial Monitor
+  pinMode(D1,OUTPUT);
+  Serial.println("Serial communication started\n\n");  
+           
+                                     //try to connect with wifi
+
+  
+  Serial.println();
+
+                                              //print local IP address
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);   // connect to firebase
+  Serial.println("Connected to firebase");
+  Firebase.reconnectWiFi(true);
+  pinMode(buttonPin, INPUT);
+}
+
+void loop() {
+//  FirebaseJson json;
+//  FirebaseJson roomDetails;
+//  roomDetails.set("
+  
+
+  int buttonState= digitalRead(buttonPin);
+  if (buttonState == HIGH){
+     FirebaseJson json;
+      String roomID = randomID_generator();
+        json.set(roomID+"/alias",roomID);
+      if (Firebase.updateNode(firebaseData,"/8HcAT87dasVTkdgBGc7qoUg8LY03/rooms",json)){
+        Serial.print("A new room is added to:");
+       Serial.println(firebaseData.dataPath());
+       randomID_generator();
+      }
+  
+  }
+
+}
+
+String randomID_generator(){
+
+  ESP8266TrueRandom.uuid(uuidNumber);
+  String uuidStr = ESP8266TrueRandom.uuidToString(uuidNumber);
+  Serial.println("The UUID number is " + uuidStr);
+  return uuidStr;
+}
